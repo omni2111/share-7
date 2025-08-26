@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>share-7 - 资讯站</title>
+  <style>
+    body { font-family: "Microsoft YaHei", sans-serif; background: #f7f9fc; margin: 0; }
+    header { background: linear-gradient(135deg, #4facfe, #00f2fe); color: #fff; text-align: center; padding: 40px 20px; }
+    header h1 { margin: 0; font-size: 2.2em; }
+    main { max-width: 800px; margin: 30px auto; padding: 20px; background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .news-item { margin-bottom: 30px; border-bottom: 1px solid #eee; padding-bottom: 15px; }
+    .news-item h2 { margin: 0; font-size: 1.4em; color: #0078d7; }
+    .news-item time { display: block; font-size: 0.85em; color: #999; margin: 5px 0 10px; }
+    footer { text-align: center; padding: 20px; font-size: 0.9em; color: #888; margin-top: 40px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>欢迎来到share-7资讯站</h1>
+    <p>这里会发布最新动态与资讯</p>
+  </header>
+
+  <main id="news">
+    <p>⏳ 正在加载资讯...</p>
+  </main>
+
+  <footer>
+    © 2025 我的资讯站 | Powered by Netlify CMS
+  </footer>
+
+  <!-- marked.js 用来把 Markdown 转换成 HTML -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script>
+    async function loadNews() {
+      try {
+        const response = await fetch('/news');
+        const text = await response.text();
+        const files = [...text.matchAll(/href="(.*?\.md)"/g)].map(m => m[1]);
+
+        if (files.length === 0) {
+          document.getElementById('news').innerHTML = "<p>暂无资讯，敬请期待！</p>";
+          return;
+        }
+
+        let html = "";
+        for (let file of files.reverse()) {
+          const res = await fetch(file);
+          const md = await res.text();
+
+          const titleMatch = md.match(/title:\s*(.*)/);
+          const dateMatch = md.match(/date:\s*(.*)/);
+          const body = md.replace(/---[\s\S]*?---/, '');
+
+          html += `
+            <div class="news-item">
+              <h2>${titleMatch ? titleMatch[1] : "未命名"}</h2>
+              <time>${dateMatch ? dateMatch[1] : ""}</time>
+              <div>${marked.parse(body)}</div>
+            </div>
+          `;
+        }
+        document.getElementById('news').innerHTML = html;
+      } catch (e) {
+        document.getElementById('news').innerHTML = "<p>加载失败，请稍后再试。</p>";
+      }
+    }
+    loadNews();
+  </script>
+</body>
+</html>
